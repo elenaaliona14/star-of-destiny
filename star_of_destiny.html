@@ -847,7 +847,7 @@ function buildSphereTab(containerId,sphereKey,dataMap,nodes){
 
   // Booking block inserted after first energy card
   function makeBookingBlock(){
-    const offerCardsHtml=offers.map((o,i)=>`<div class="offer-card${i===0?' selected':''}" id="offer-${o.id}" data-stripe="${o.stripe}" onclick="selectOfferCustom('${o.id}',${o.price},'${o.type}','${o.stripe}',this)"><div class="offer-radio">${i===0?'<span style="width:8px;height:8px;border-radius:50%;background:#0a0f1e;display:block;margin:auto"></span>':''}</div><div class="offer-info"><div class="offer-name">${o.name}</div><div class="offer-desc">${o.desc}</div></div><div class="offer-price">€${o.price}</div></div>`).join('');
+    const offerCardsHtml=offers.map((o,i)=>`<div class="offer-card${i===0?' selected':''}" id="offer-${o.id}" data-stripe="${o.stripe}" data-type="${o.type}" onclick="selectOfferCustom('${o.id}',${o.price},'${o.type}','${o.stripe}',this)"><div class="offer-radio">${i===0?'<span style="width:8px;height:8px;border-radius:50%;background:#0a0f1e;display:block;margin:auto"></span>':''}</div><div class="offer-info"><div class="offer-name">${o.name}</div><div class="offer-desc">${o.desc}</div></div><div class="offer-price">€${o.price}</div></div>`).join('');
     const div=document.createElement('div');
     div.id=`booking-block-${sphereKey}`;
     div.style.cssText='margin:4px 0 12px;padding:16px;background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.03));border:1px solid rgba(201,168,76,.3);border-radius:12px';
@@ -875,9 +875,20 @@ function buildSphereTab(containerId,sphereKey,dataMap,nodes){
         // Gifts only — free gift note at bottom
         html+=`<div style="margin-top:14px;padding:12px 14px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.25);border-radius:8px;text-align:center"><p style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:.2em;color:var(--gold);margin-bottom:4px">✦ FREE GIFT</p><p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--muted);line-height:1.5">Your Personality reading is included free<br/>with any other reading you book.</p></div>`;
       } else {
-        const lockPreviewC=d.challenges&&d.challenges.length?d.challenges.slice(0,2).map(c=>`<li>${c}</li>`).join(''):'';
-        const lockPreviewR=d.recommendations&&d.recommendations.length?d.recommendations.slice(0,2).map(r=>`<li>${r}</li>`).join(''):'';
-        html+=`<div class="lock-gate"><div class="lock-blur"><ul class="eb-list">${lockPreviewC}${lockPreviewR}</ul></div><span class="lock-icon">🔒</span><p class="lock-title">CHALLENGES & RECOMMENDATIONS LOCKED</p><p class="lock-desc">Unlock your full reading to see what is blocking you<br/>and exactly what to do about it.</p><button class="unlock-btn" onclick="document.getElementById('booking-block-${sphereKey}')?.scrollIntoView({behavior:'smooth',block:'center'})">✦ UNLOCK MY FULL READING</button></div>`;
+        // Show gifts free (already done above)
+        // Show first 2 challenges free, blur the rest
+        if(d.challenges&&d.challenges.length){
+          const free=d.challenges.slice(0,2);
+          const locked=d.challenges.slice(2);
+          html+=`<div class="eb-sec"><p class="eb-sec-title" style="color:#e74c3c">✦ SHADOWS</p><ul class="eb-list">${free.map(c=>`<li>${c}</li>`).join('')}</ul></div>`;
+          if(locked.length){
+            html+=`<div class="lock-gate"><div class="lock-blur"><ul class="eb-list">${locked.slice(0,2).map(c=>`<li>${c}</li>`).join('')}</ul></div><span class="lock-icon">🔒</span><p class="lock-title">FULL SHADOWS & ACTIVATIONS & RECOMMENDATIONS LOCKED</p><p class="lock-desc">Unlock your full reading to see every pattern blocking you<br/>and exactly what to do about it.</p><button class="unlock-btn" onclick="document.getElementById('booking-block-${sphereKey}')?.scrollIntoView({behavior:'smooth',block:'center'})">✦ UNLOCK MY FULL READING</button></div>`;
+          } else {
+            html+=`<div class="lock-gate"><div class="lock-blur"><ul class="eb-list"><li>Deeper patterns hidden</li><li>Activations & Recommendations locked</li></ul></div><span class="lock-icon">🔒</span><p class="lock-title">ACTIVATIONS & RECOMMENDATIONS LOCKED</p><p class="lock-desc">Unlock your full reading to see exactly what to do about it.</p><button class="unlock-btn" onclick="document.getElementById('booking-block-${sphereKey}')?.scrollIntoView({behavior:'smooth',block:'center'})">✦ UNLOCK MY FULL READING</button></div>`;
+          }
+        } else {
+          html+=`<div class="lock-gate"><div class="lock-blur"><ul class="eb-list"><li>Activations & Recommendations locked</li></ul></div><span class="lock-icon">🔒</span><p class="lock-title">ACTIVATIONS & RECOMMENDATIONS LOCKED</p><p class="lock-desc">Unlock your full reading to see exactly what to do about it.</p><button class="unlock-btn" onclick="document.getElementById('booking-block-${sphereKey}')?.scrollIntoView({behavior:'smooth',block:'center'})">✦ UNLOCK MY FULL READING</button></div>`;
+        }
       }
     } else {
       html+=`<p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--muted);padding:8px 0">Data coming soon for this energy</p>`;
@@ -905,6 +916,16 @@ let selectedOfferType='pdf';
 let selectedStripeKey='pdf44';
 
 function openBookingForSphere(sphere){
+  // Pick up whichever offer is currently selected in the sphere booking block
+  const block=document.getElementById(`booking-block-${sphere}`);
+  if(block){
+    const selected=block.querySelector('.offer-card.selected');
+    if(selected){
+      selectedOffer=parseInt(selected.querySelector('.offer-price')?.textContent?.replace('€',''))||44;
+      selectedOfferType=selected.dataset.type||'pdf';
+      selectedStripeKey=selected.dataset.stripe||'pdf44';
+    }
+  }
   const sel=document.getElementById('b-sphere');
   if(sel){
     const sphereMap={money:'Money',relationships:'Relationships',health:'Health',personality:'Personality',spirituality:'Spirituality',soul:'Full Star',chakras:'Chakras',roadmap:'Roadmap','full star':'Full Star'};
