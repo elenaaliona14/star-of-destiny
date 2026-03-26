@@ -547,7 +547,13 @@ function drawStar(v){
   tiny(mid(oP4,oi3),v.t4a);tiny(mid(oP4,oi4),v.t4b);tiny(mid(oi3,oi4),v.t4c);
   tiny(mid(oP5,oi4),v.t5a);tiny(mid(oP5,oi5),v.t5b);tiny(mid(oi4,oi5),v.t5c);
 
-  // med nodes (i3,i4,i5) removed — not displayed
+  function med(p,val){
+    const col=cc(val);
+    E(svg,'circle',{cx:p.x,cy:p.y,r:16,fill:'#0d1225',stroke:col,'stroke-width':'2'});
+    E(svg,'circle',{cx:p.x,cy:p.y,r:7,fill:col,opacity:'0.35'});
+    T(svg,p.x,p.y,val,col,'11',true);
+  }
+  med(oi3,v.i3);med(oi4,v.i4);med(oi5,v.i5);
 
   axisNodes.forEach((p,idx)=>{
     if(!p) return; // skip center soul mission node
